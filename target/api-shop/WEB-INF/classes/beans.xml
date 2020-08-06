@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+        http://www.springframework.org/schema/aop
+        http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+        http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+
+        http://www.springframework.org/schema/tx
+        http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.0.xsd">
+
+    <!-- 扫描包路径 识别   @service  -->
+    <context:component-scan base-package="com.fh.service" />
+
+    <bean id="dataSourceInfo" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <property name="url" value="jdbc:mysql://localhost:3306/fh-shop" />
+        <property name="username"><value>root</value></property>
+        <property name="password"><value>root</value></property>
+        <property name="maxActive"><value>20</value></property>
+        <property name="initialSize"><value>1</value></property>
+        <property name="maxWait"><value>60000</value></property>
+        <property name="maxIdle"><value>20</value></property>
+        <property name="minIdle"><value>3</value></property>
+        <property name="removeAbandoned"><value>true</value></property>
+        <property name="removeAbandonedTimeout"><value>180</value></property>
+    </bean>
+
+
+
+    <!--  配置mybatis sqlSessionFactory-->
+    <!--生成sqlSession -->
+    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSourceInfo" />
+        <!--  自动查找myBatis的xml配置文件，省掉sqlMapConfig.xml里的mappers手工配置 -->
+        <property name="mapperLocations" value="classpath:mapping/*.xml" />
+    </bean>
+
+    <!-- 通过 MapperScannerConfigurer自动扫描指定basePackage中的所有的接口，并且
+      把sqlSession与接口结合-->
+    <!-- 配置 MapperScan  扫描dao层接口-->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.fh.mapper"/>
+    </bean>
+    <bean id="t" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSourceInfo"/>
+    </bean>
+
+    <!-- 配置事务的传播特性 -->
+    <tx:advice id="txAdvice" transaction-manager="t"><!-- 配置事务管理器 -->
+        <tx:attributes>
+            <tx:method name="add*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="ins*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="payWechat" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="queryOrderDetail" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="save*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="del*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="batch*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="update*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="import*" propagation="REQUIRED" rollback-for="Exception"/>
+            <tx:method name="*" read-only="true"/>
+            <!-- 如果不是以上三种，则配置成只读事务(如select)。只读事务可以提高性能，当更新某个对象时，将不会再做脏数据检查。(因为是只读的并不用更新，所以不用再作比较,判断是否读取到脏数据。) -->
+        </tx:attributes>
+    </tx:advice>
+
+    <!-- .. 代表改包下任意嵌套层次的子包 -->
+    <aop:config>
+        <aop:pointcut expression="execution(* com.fh.service.impl.*.*(..))"
+                      id="servicePointcut" />
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="servicePointcut" />
+    </aop:config>
+
+</beans>

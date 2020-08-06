@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.fh.mapper.ProductMapper">
+
+    <!--<select id="findProductCount" resultType="long">-->
+        <!--select count(*) from shop_product-->
+    <!--</select>-->
+
+    <select id="findProductData" parameterType="com.fh.entity.ProductVO" resultType="com.fh.entity.ProductVO">
+        select id,productName,price,productImg from shop_product
+        <where>
+            <if test="typeIds != null and typeIds != ''">
+                typeIds like CONCAT('%',#{typeIds},'%');
+            </if>
+        </where>
+    </select>
+
+    <select id="findProductIsHot" resultType="com.fh.entity.ProductVO">
+        select id,productImg from shop_product where ishot = 0
+    </select>
+
+    <select id="findProductById" resultType="com.fh.entity.ProductVO">
+        select * from shop_product where id = #{typeId}
+    </select>
+
+    <select id="findAreaIdIsName" resultType="java.lang.String">
+        select name from shop_area where id in (${ids})
+    </select>
+
+    <select id="selectProductById" resultType="com.fh.entity.Product">
+        select * from shop_product alias where id = #{id}
+    </select>
+
+    <!--<update id="updateInventory" parameterType="com.fh.entity.Product">-->
+        <!--update shop_product set inventory = #{inventory}  where id = #{id}-->
+    <!--</update>-->
+    <!-- 超卖 -->
+    <update id="updateInventory">
+        update shop_product set inventory = inventory-#{productcount}  where id = #{id} and inventory = inventory-#{productcount}>=0
+    </update>
+
+
+</mapper>
